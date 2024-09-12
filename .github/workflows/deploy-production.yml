@@ -1,0 +1,47 @@
+name: deploy-production
+
+on:
+  release:
+    types: [ published ]
+
+concurrency: production
+
+jobs:
+
+  update-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: arduino/setup-task@v2
+    - run: task update-infrastructure
+
+  database-migrate:
+    needs: update-infrastructure
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: arduino/setup-task@v2
+    - run: task update-infrastructure
+
+  stack:
+    needs: database-migrate
+    strategy:
+      max-parallel: 3
+      matrix:
+        stack: [admin, app, demo, fulfilment, packer, platform, satellite, scans, simulator]
+    uses: ./.github/workflows/deploy-staging-stack.yml
+    with:
+      stack: ${{ matrix.stack }}
+
+  notify-success:
+    needs: stack
+    runs-on: ubuntu-latest
+    steps:
+    - run: "echo 'all done here.'"
+
+  notify-failure:
+    needs: [update-infrastructure, database-migrate, stack]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+    - run: "echo 'looks like a failure somewhere.'"

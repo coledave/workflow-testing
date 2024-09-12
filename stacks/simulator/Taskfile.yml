@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  test:
+    cmds:
+      - sleep 10
+  build:
+    cmds:
+      - sleep 10
+  deploy:
+    cmds:
+      - sleep 10

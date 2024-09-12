@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+  update-infrastructure:
+    cmds:
+      - sleep 20
+  database-migrate:
+    cmds:
+      - sleep 20

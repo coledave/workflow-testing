@@ -1,0 +1,19 @@
+name: ci-stack
+
+on:
+  workflow_call:
+    inputs:
+      stack:
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./stacks/${{ inputs.stack }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: arduino/setup-task@v2
+    - run: task test

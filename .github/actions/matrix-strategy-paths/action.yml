@@ -1,0 +1,18 @@
+name: "Matrix Strategy - Files"
+description: "A custom action to generate a matrix based changed files."
+inputs:
+  matrix-strategy:
+    description: "yaml key value pairs, the value is an array of path patterns, if any match the key will be part of the final matrix"
+    required: true
+  changed-files:
+    description: "command will be ran to get a list of changed files"
+    required: true
+outputs:
+  matrix:
+    description: "generated matrix"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - ${{ inputs.matrix-strategy }}
+    - ${{ inputs.changed-files }}

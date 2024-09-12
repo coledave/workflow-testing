@@ -1,0 +1,80 @@
+name: deploy-staging
+
+on:
+  push:
+    branches: [ master ]
+
+concurrency: staging
+
+jobs:
+
+  update-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: arduino/setup-task@v2
+    - run: task update-infrastructure
+
+  database-migrate:
+    needs: update-infrastructure
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: arduino/setup-task@v2
+    - run: task update-infrastructure
+
+  stack-matrix-strategy:
+    needs: database-migrate
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix-strategy.outputs.matrix }}
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 0 }
+    - id: matrix-strategy
+      uses: ./.github/actions/matrix-strategy-paths
+      with:
+        matrix-strategy: |
+          admin:
+          - 'stacks/admin/**'
+          app:
+          - 'stacks/app/**'
+          demo:
+          - 'stacks/demo/**'
+          fulfilment:
+          - 'stacks/fulfilment/**'
+          packer:
+            - 'stacks/packer/**'
+          platform:
+          - 'stacks/platform/**'
+          satellite:
+          - 'stacks/satellite/**'
+          scans:
+            - 'stacks/scans/**'
+          simulator:
+          - 'stacks/simulator/**'
+        changed-files: git --no-pager diff --name-only HEAD^ HEAD
+
+  stack:
+    needs: stack-matrix-strategy
+    if: ${{ needs.stack-matrix-strategy.outputs.matrix != '[]' }}
+    strategy:
+      max-parallel: 3
+      matrix:
+        stack: ${{ fromJson(needs.stack-matrix-strategy.outputs.matrix) }}
+    uses: ./.github/workflows/deploy-staging-stack.yml
+    with:
+      stack: ${{ matrix.stack }}
+
+  notify-success:
+    needs: stack
+    runs-on: ubuntu-latest
+    steps:
+    - run: "echo 'all done here.'"
+
+  notify-failure:
+    needs: [update-infrastructure, database-migrate, stack-matrix-strategy, stack]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+    - run: "echo 'looks like a failure somewhere.'"

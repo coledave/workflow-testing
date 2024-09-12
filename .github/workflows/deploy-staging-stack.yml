@@ -1,0 +1,42 @@
+name: deploy-staging-stack
+
+on:
+  workflow_call:
+    inputs:
+      stack:
+        required: true
+        type: string
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./stacks/${{ inputs.stack }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: arduino/setup-task@v2
+    - run: task test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./stacks/${{ inputs.stack }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: arduino/setup-task@v2
+    - run: task build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./stacks/${{ inputs.stack }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: arduino/setup-task@v2
+    - run: task deploy
