@@ -67,8 +67,8 @@ jobs:
       stack: ${{ matrix.stack }}
 
   notify-success:
-    needs: [update-infrastructure, database-migrate]
-    if: ${{ success() || (needs.stack.result == 'skipped') }}
+    needs: [update-infrastructure, database-migrate, stack]
+    if: ${{ always() && !failure() && (needs.stack.result == 'skipped' || needs.stack.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
     - run: "echo 'all done here.'"
